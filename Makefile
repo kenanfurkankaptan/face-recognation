@@ -43,7 +43,7 @@ LEAK = -fsanitize=leak
 
 
 # thread sanitizer is not compatible with address sanitizers, undefined sanitizers or leak saintizers
-CPPFLAGS += $(COMPILER_WARNINGS) $(UNDEFINED) $(ADDRESS)
+# CPPFLAGS += $(COMPILER_WARNINGS) $(UNDEFINED) $(ADDRESS)
 
 
 # The build target 
@@ -58,7 +58,7 @@ LDFLAGS += `pkg-config opencv4 --cflags --libs`
 
 # Src files list
 SRCDIR := src
-SRCSUBDIRS := . ./face_recognation ./fd_video ./document_detection
+SRCSUBDIRS := . ./face_recognation ./face_detection/from_image ./face_detection/from_video
 
 # A directory to store object files
 BUILDDIR = .build

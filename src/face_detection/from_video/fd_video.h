@@ -1,3 +1,6 @@
+#ifndef FD_VIDEO_H_
+#define FD_VIDEO_H_
+
 #include <filesystem>
 #include <opencv2/highgui.hpp>
 #include <opencv2/imgproc.hpp>
@@ -6,7 +9,7 @@
 
 namespace fs = std::filesystem;
 
-#include "../include/face_detection.h"
+#include "../../include/face_detection.h"
 
 class fd_video : public face_detection {
    public:
@@ -21,9 +24,9 @@ class fd_video : public face_detection {
 		if (!face_cascade.load(path)) {
 			std::cerr << "Error: Could not load Haar Cascade Classifier from " << path << std::endl;
 		}
+
+		cap = cv::VideoCapture(0);
 	};
-	int load_model(std::string path);
-	int select_source(std::string path);
 	std::vector<cv::Mat> get_faces(std::string path);
 
    private:
@@ -31,3 +34,5 @@ class fd_video : public face_detection {
 	cv::VideoCapture cap;
 	cv::Mat img;
 };
+
+#endif /* FD_VIDEO_H_ */

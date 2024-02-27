@@ -4,8 +4,9 @@
 #include <iostream>
 #include <vector>
 
+#include "face_detection/from_image/fd_image.h"
+#include "face_detection/from_video/fd_video.h"
 #include "face_recognation/face_recognation.h"
-#include "fd_video/fd_video.h"
 
 namespace fs = std::filesystem;
 
@@ -35,7 +36,7 @@ int main(int argc, char** argv) {
 		std::cout << "train\n";
 
 		std::vector<cv::Mat> image_mat;
-		auto face_detector = fd_video("resources/models/haarcascade_frontalface_default.xml");
+		auto face_detector = fd_image("resources/models/haarcascade_frontalface_default.xml");
 
 		try {
 			for (const auto& entry : fs::directory_iterator("./resources/dataset/random")) {
@@ -61,11 +62,11 @@ int main(int argc, char** argv) {
 
 		std::cout << "Loading Model\n";
 
-		auto face_recog = face_recognizer();
-		face_recog.load_model("resources/models/trainer.xml");
+		auto face_recog = face_recognizer("resources/models/trainer.xml");
+
+		std::cout << "Initiating face detector\n";
 
 		auto face_detector = fd_video("resources/models/haarcascade_frontalface_default.xml");
-		face_detector.select_source("");
 
 		std::cout << "Capturing Camera\n";
 
@@ -75,28 +76,39 @@ int main(int argc, char** argv) {
 
 			if (!images.empty()) counter++;
 
-			face_recog.train(images, 1);
+			face_recog.update(images, 5);
 
-			if (counter == 40) break;
+			if (counter == 20) break;
 
-			cv::waitKey(1);
+			cv::waitKey(5);
 		}
 
-	}
+		face_recog.save_model("resources/models/trainer2.xml");
 
-	else {
+	} else {
 		std::cout << "predict\n";
 
+		std::cout << "Loading Model\n";
+
 		auto face_recog = face_recognizer();
-		face_recog.load_model("resources/models/trainer.xml");
+		face_recog.load_model("resources/models/trainer2.xml");
+
+		std::cout << "Initiating face detector\n";
 
 		auto face_detector = fd_video("resources/models/haarcascade_frontalface_default.xml");
-		face_detector.select_source("");
 
-		std::vector<face_predict_model> data;
-		auto images = face_detector.get_faces("");
-		for (auto i : images) {
-			data.push_back(face_recog.predict(i));
+		std::cout << "Capturing Camera\n";
+
+		while (true) {
+			std::vector<face_predict_model> data;
+			auto images = face_detector.get_faces("");
+			for (auto i : images) {
+				auto a = face_recog.predict(i);
+
+				std::cout << "label: " << a.label << "\tconfidence: " << a.confidence << std::endl;
+			}
+
+			cv::waitKey(1);
 		}
 	}
 
