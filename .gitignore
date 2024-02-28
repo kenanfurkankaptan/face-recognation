@@ -33,3 +33,4 @@
 
 resources/dataset/*
 resources/models/trainer*
+models/*

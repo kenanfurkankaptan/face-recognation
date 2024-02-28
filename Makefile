@@ -58,7 +58,7 @@ LDFLAGS += `pkg-config opencv4 --cflags --libs`
 
 # Src files list
 SRCDIR := src
-SRCSUBDIRS := . ./face_recognation ./face_detection/from_image ./face_detection/from_video
+SRCSUBDIRS := . ./face_recognation ./face_detection/
 
 # A directory to store object files
 BUILDDIR = .build

@@ -2,15 +2,17 @@
 
 #include <filesystem>
 #include <iostream>
+#include <opencv2/core/utility.hpp>
 #include <vector>
 
-#include "face_detection/from_image/fd_image.h"
-#include "face_detection/from_video/fd_video.h"
+#include "face_detection/face_detection.h"
 #include "face_recognation/face_recognation.h"
 
 namespace fs = std::filesystem;
 
 int main(int argc, char** argv) {
+	cv::setNumThreads(16);
+
 	/** 0 = train model
 	 * 1 =
 	 * 2 = predict */
@@ -36,16 +38,18 @@ int main(int argc, char** argv) {
 		std::cout << "train\n";
 
 		std::vector<cv::Mat> image_mat;
-		auto face_detector = fd_image("resources/models/haarcascade_frontalface_default.xml");
+		auto face_detector = face_detection("resources/models/haarcascade_frontalface_default.xml", from_file);
 
 		try {
 			for (const auto& entry : fs::directory_iterator("./resources/dataset/random")) {
 				if (fs::is_regular_file(entry.path())) {
-					auto image = face_detector.get_faces(entry.path().generic_string());
+					cv::Mat img = face_detector.get_image(entry.path().generic_string());
+					auto face_pos = face_detector.get_faces(img);
+					auto faces = face_detector.crop_faces(img, face_pos);
 					image_mat.insert(
 						image_mat.end(),
-						std::make_move_iterator(image.begin()),
-						std::make_move_iterator(image.end()));
+						std::make_move_iterator(faces.begin()),
+						std::make_move_iterator(faces.end()));
 				}
 			}
 		} catch (const std::filesystem::filesystem_error& e) {
@@ -66,25 +70,26 @@ int main(int argc, char** argv) {
 
 		std::cout << "Initiating face detector\n";
 
-		auto face_detector = fd_video("resources/models/haarcascade_frontalface_default.xml");
+		auto face_detector = face_detection("resources/models/haarcascade_frontalface_default.xml", from_camera);
 
 		std::cout << "Capturing Camera\n";
 
 		int counter = 0;
 		while (true) {
-			auto images = face_detector.get_faces("");
+			cv::Mat img = face_detector.get_image();
+			auto face_pos = face_detector.get_faces(img);
+			auto faces = face_detector.crop_faces(img, face_pos);
 
-			if (!images.empty()) counter++;
+			if (!faces.empty()) counter++;
 
-			face_recog.update(images, 5);
+			face_recog.update(faces, 1);
 
-			if (counter == 20) break;
+			if (counter == 4) break;
 
 			cv::waitKey(5);
 		}
 
 		face_recog.save_model("resources/models/trainer2.xml");
-
 	} else {
 		std::cout << "predict\n";
 
@@ -95,19 +100,40 @@ int main(int argc, char** argv) {
 
 		std::cout << "Initiating face detector\n";
 
-		auto face_detector = fd_video("resources/models/haarcascade_frontalface_default.xml");
+		auto face_detector = face_detection("resources/models/haarcascade_frontalface_default.xml", from_camera);
 
 		std::cout << "Capturing Camera\n";
 
 		while (true) {
 			std::vector<face_predict_model> data;
-			auto images = face_detector.get_faces("");
-			for (auto i : images) {
-				auto a = face_recog.predict(i);
+			cv::Mat img = face_detector.get_image();
+			auto face_pos = face_detector.get_faces(img);
 
+			for (auto p : face_pos) {
+				auto face = face_detector.crop_faces(img, p);
+				auto a = face_recog.predict(face);
 				std::cout << "label: " << a.label << "\tconfidence: " << a.confidence << std::endl;
+
+				std::string name;
+				switch (a.label) {
+					case 0:
+						name = "foreign";
+						break;
+					case 1:
+						name = "kfk";
+
+						break;
+					case 2:
+						name = "cut";
+
+						break;
+					default:
+						name = "foreign";
+				}
+				face_detector.label_faces(p, name, img);
 			}
 
+			imshow("Image", img);
 			cv::waitKey(1);
 		}
 	}

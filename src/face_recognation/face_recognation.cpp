@@ -61,8 +61,8 @@ int face_recognizer::update(std::vector<cv::Mat> images, int label) {
 }
 
 face_predict_model face_recognizer::predict(cv::Mat faceROI) {
-	int label;
-	double confidence;
+	int label = -1;
+	double confidence = -1;
 	recognizer->predict(faceROI, label, confidence);
 
 	return {label, confidence};
