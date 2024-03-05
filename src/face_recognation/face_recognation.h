@@ -11,7 +11,11 @@ class face_recognizer {
    public:
 	face_recognizer(std::string path = "");
 	int train(std::vector<cv::Mat> images, int label);
+	int train(std::vector<cv::Mat> images, std::vector<int> label);
+
 	int update(std::vector<cv::Mat> images, int label);
+	int update(std::vector<cv::Mat> images, std::vector<int> label);
+
 	face_predict_model predict(cv::Mat faceROI);
 	int save_model(std::string path);
 	int load_model(std::string path);

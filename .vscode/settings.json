@@ -71,6 +71,8 @@
         "variant": "cpp",
         "codecvt": "cpp",
         "filesystem": "cpp",
-        "*.ipp": "cpp"
+        "*.ipp": "cpp",
+        "unordered_set": "cpp",
+        "forward_list": "cpp"
     }
 }

@@ -54,7 +54,7 @@ RM = rm -rf
 # linker flags
 # libraries to link
 # LDFLAGS += -I /usr/include/opencv4/ -L /usr/lib/x86_64-linux-gnu/ -lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_videoio
-LDFLAGS += `pkg-config opencv4 --cflags --libs`
+LDFLAGS += `pkg-config opencv4 --cflags --libs` -lfmt
 
 # Src files list
 SRCDIR := src

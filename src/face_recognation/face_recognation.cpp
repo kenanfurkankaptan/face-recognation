@@ -21,7 +21,11 @@ face_recognizer::face_recognizer(std::string path) {
 int face_recognizer::train(std::vector<cv::Mat> images, int label) {
 	std::vector<int> label_vector(images.size(), label);
 
-	if (images.empty() || label_vector.empty() || images.size() != label_vector.size()) {
+	return this->train(images, label_vector);
+}
+
+int face_recognizer::train(std::vector<cv::Mat> images, std::vector<int> label) {
+	if (images.empty() || label.empty() || images.size() != label.size()) {
 		std::cerr << "Error: size: " << images.size() << std::endl;
 
 		std::cerr << "Error: Empty or mismatched dataset." << std::endl;
@@ -29,7 +33,7 @@ int face_recognizer::train(std::vector<cv::Mat> images, int label) {
 	}
 
 	try {
-		recognizer->train(images, label_vector);
+		recognizer->train(images, label);
 	} catch (const cv::Exception& e) {
 		std::cerr << "OpenCV Exception: " << e.what() << std::endl;
 	} catch (const std::exception& e) {
@@ -42,7 +46,11 @@ int face_recognizer::train(std::vector<cv::Mat> images, int label) {
 int face_recognizer::update(std::vector<cv::Mat> images, int label) {
 	std::vector<int> label_vector(images.size(), label);
 
-	if (images.empty() || label_vector.empty() || images.size() != label_vector.size()) {
+	return this->update(images, label_vector);
+}
+
+int face_recognizer::update(std::vector<cv::Mat> images, std::vector<int> label) {
+	if (images.empty() || label.empty() || images.size() != label.size()) {
 		std::cerr << "Error: size: " << images.size() << std::endl;
 
 		std::cerr << "Error: Empty or mismatched dataset." << std::endl;
@@ -50,7 +58,7 @@ int face_recognizer::update(std::vector<cv::Mat> images, int label) {
 	}
 
 	try {
-		recognizer->update(images, label_vector);
+		recognizer->update(images, label);
 	} catch (const cv::Exception& e) {
 		std::cerr << "OpenCV Exception: " << e.what() << std::endl;
 	} catch (const std::exception& e) {
