@@ -10,10 +10,13 @@
 #include <unordered_set>
 #include <vector>
 
-#include "face_detection/face_detection.h"
+#include "cascade_classifier/cascade_classifier.h"
 #include "face_recognation/face_recognation.h"
+#include "helpers/image_helper.h"
+#include "helpers/image_provider.h"
 #include "include/constants.h"
 #include "schemes/face_recognation_model_info.h"
+#include "yunet/yunet.h"
 
 using json = nlohmann::json;
 
@@ -44,6 +47,8 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	IFaceDetection* face_detector = nullptr;
+
 	if (app_mode == 0)
 		fs::remove(Constants::Path::face_recognation_info);
 
@@ -57,6 +62,8 @@ int main(int argc, char** argv) {
 	}
 
 	if (app_mode == 0 || app_mode == 2) {
+		auto image = image_provider(from_file);
+
 		std::unordered_set<std::string> labels;
 		try {
 			for (const auto& entry : fs::directory_iterator(Constants::Path::data)) {
@@ -77,25 +84,28 @@ int main(int argc, char** argv) {
 		std::vector<cv::Mat> image_mat;
 		std::vector<int> image_labels;
 
-		auto face_detector = face_detection(Constants::Path::face_detection, from_file);
-		auto face_recog = face_recognizer(fmt::format("{}/trainer.xml", Constants::Path::face_recognation));
+		face_detector = new cascade_classifier(Constants::Path::face_detection);
 
-		int i = info.labels.back().id;
+		auto face_recog = face_recognizer();
+		if (!info.model.empty()) face_recog.load_model(fmt::format("{}/trainer.xml", Constants::Path::face_recognation));
+
+		// std::cout << "Created LBPHFaceRecognizer model" << std::endl;
+
+		/** vector.back gives segmentation fault if vector is empty */
+		int i = info.labels.size() == 0 ? 0 : info.labels.back().id + 1;
 		for (const std::string& value : labels) {
 			try {
 				for (const auto& entry : fs::directory_iterator(fmt::format("{}/{}", Constants::Path::data, value))) {
 					if (fs::is_regular_file(entry.status())) {
-						cv::Mat img = face_detector.get_image(entry.path().generic_string());
-						auto face_pos = face_detector.get_faces(img);
-						auto faces = face_detector.crop_resize_faces(img, face_pos);
+						cv::Mat img = image.get_image(entry.path().generic_string());
+						auto face_pos = face_detector->get_faces(img);
+						auto faces = image_helper::crop_resize_faces(img, face_pos);
 						image_mat.insert(
 							image_mat.end(),
 							std::make_move_iterator(faces.begin()),
 							std::make_move_iterator(faces.end()));
 					}
 				}
-
-				std::cout << "AaA: " << i << std::endl;
 
 				info.labels.push_back({i, value});
 
@@ -106,6 +116,8 @@ int main(int argc, char** argv) {
 				std::cerr << "Error: " << e.what() << std::endl;
 			}
 		}
+
+		info.model = "trainer.xml";
 
 		try {
 			std::ofstream outputFile(Constants::Path::face_recognation_info, std::ios_base::out);
@@ -123,10 +135,11 @@ int main(int argc, char** argv) {
 		}
 
 		face_recog.update(image_mat, image_labels);
-		face_recog.save_model(fmt::format("{}/trainer.xml", Constants::Path::face_recognation));
+
+		face_recog.save_model(fmt::format("{}/{}", Constants::Path::face_recognation, info.model));
+
 	} else if (app_mode == 1) {
-		std::cout << "take photo\n";
-		std::cout << "Initiating face detector\n";
+		auto image = image_provider(from_camera);
 
 		try {
 			if (fs::create_directory(fmt::format("{}/{}", Constants::Path::data, label_name)))
@@ -137,50 +150,47 @@ int main(int argc, char** argv) {
 			std::cerr << e.what() << '\n';
 		}
 
-		auto face_detector = face_detection(Constants::Path::face_detection, from_camera);
+		face_detector = new cascade_classifier(Constants::Path::face_detection);
 
 		std::cout << "Capturing Camera\n";
-
 		int counter = 0;
 		while (true) {
-			cv::Mat img = face_detector.get_image();
-			auto face_pos = face_detector.get_faces(img);
-			auto faces = face_detector.crop_resize_faces(img, face_pos);
+			cv::Mat img = image.get_image();
+			auto face_pos = face_detector->get_faces(img);
+			auto faces = image_helper::crop_resize_faces(img, face_pos);
 
 			if (!faces.empty()) {
 				counter++;
-				if (counter % 25 == 0) {
-					face_detector.save_image(fmt::format("{}/{}/{}.png", Constants::Path::data, label_name, counter), img);
+				if (counter % 10 == 0) {
+					image_helper::save_image(fmt::format("{}/{}/{}.png", Constants::Path::data, label_name, counter), img);
 				}
 			}
 
-			if (counter == 500) break;
+			if (counter == 200) break;
 
 			imshow("Image", img);
 			cv::waitKey(1);
 		}
 
 	} else if (app_mode == 3) {
-		std::cout << "predict\n";
+		auto image = image_provider(from_camera);
 
-		std::cout << "Loading Model\n";
-
-		auto face_recog = face_recognizer();
-		face_recog.load_model(fmt::format("{}/{}", Constants::Path::face_recognation, info.model));
-
-		std::cout << "Initiating face detector\n";
-
-		auto face_detector = face_detection(Constants::Path::face_detection, from_camera);
+		auto face_recog = face_recognizer(fmt::format("{}/{}", Constants::Path::face_recognation, info.model));
+		// face_recog.load_model();
 
 		std::cout << "Capturing Camera\n";
 
+		face_detector = new yunet("models/face detection/face_detection_yunet_2022mar.onnx");
+		// face_detector = new cascade_classifier(Constants::Path::face_detection);
+
+		std::cout << "Capturing Camera\n";
 		while (true) {
 			std::vector<face_predict_model> data;
-			cv::Mat img = face_detector.get_image();
-			auto face_pos = face_detector.get_faces(img);
+			cv::Mat img = image.get_image();
+			auto face_pos = face_detector->get_faces(img);
 
 			for (auto p : face_pos) {
-				auto face = face_detector.crop_resize_faces(img, p);
+				auto face = image_helper::crop_resize_faces(img, p);
 				auto a = face_recog.predict(face);
 				std::cout << "label: " << a.label << "\tconfidence: " << a.confidence << std::endl;
 
@@ -193,7 +203,7 @@ int main(int argc, char** argv) {
 					}
 				}
 
-				face_detector.label_faces(p, name, img);
+				image_helper::label_faces(p, name, img);
 			}
 
 			imshow("Image", img);

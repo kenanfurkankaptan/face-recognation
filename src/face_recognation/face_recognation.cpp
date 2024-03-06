@@ -5,11 +5,12 @@
 namespace fs = std::filesystem;
 
 face_recognizer::face_recognizer(std::string path) {
-	std::cout << "Creating model" << std::endl;
-	recognizer = cv::face::LBPHFaceRecognizer::create();
+	std::cout << "Creating LBPHFaceRecognizer model" << std::endl;
+	recognizer = cv::face::LBPHFaceRecognizer::create(2);
+	// recognizer = cv::face::LBPHFaceRecognizer::create(2, 12, 12, 12, (double)(2E308L));
 
 	if (!path.empty() && fs::exists(path)) {
-		std::cout << "Loading trained model" << std::endl;
+		std::cout << "Loading trained LBPHFaceRecognizer model" << std::endl;
 		recognizer->read(path);
 	}
 
@@ -50,6 +51,8 @@ int face_recognizer::update(std::vector<cv::Mat> images, int label) {
 }
 
 int face_recognizer::update(std::vector<cv::Mat> images, std::vector<int> label) {
+	std::cout << "Updating LBPHFaceRecognizer model" << std::endl;
+
 	if (images.empty() || label.empty() || images.size() != label.size()) {
 		std::cerr << "Error: size: " << images.size() << std::endl;
 
@@ -77,11 +80,29 @@ face_predict_model face_recognizer::predict(cv::Mat faceROI) {
 }
 
 int face_recognizer::save_model(std::string path) {
-	recognizer->save(path);
+	std::cout << "Saving LBPHFaceRecognizer model" << std::endl;
+
+	try {
+		recognizer->save(path);
+	} catch (const cv::Exception& e) {
+		std::cerr << "OpenCV Exception: " << e.what() << std::endl;
+	} catch (const std::exception& e) {
+		std::cerr << "Standard Exception: " << e.what() << std::endl;
+	}
+
 	return 0;
 }
 
 int face_recognizer::load_model(std::string path) {
-	recognizer->read(path);
+	std::cout << "Loading trained LBPHFaceRecognizer model" << std::endl;
+
+	try {
+		recognizer->read(path);
+	} catch (const cv::Exception& e) {
+		std::cerr << "OpenCV Exception: " << e.what() << std::endl;
+	} catch (const std::exception& e) {
+		std::cerr << "Standard Exception: " << e.what() << std::endl;
+	}
+
 	return 0;
 }

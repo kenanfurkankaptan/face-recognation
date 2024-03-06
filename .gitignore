@@ -31,7 +31,6 @@
 *.out
 *.app
 
-resources/dataset/*
-resources/models/trainer*
+resources/*
 models/*
 data/*

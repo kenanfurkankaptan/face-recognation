@@ -35,7 +35,7 @@ namespace schemes {
 			};
 
 			struct model_info {
-				std::string model = "trainer.xml";
+				std::string model = "";
 				std::vector<label> labels;
 			};
 		}  // namespace face_recognize
