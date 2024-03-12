@@ -1,3 +1,4 @@
+#pragma once
 
 struct face_predict_model {
 	int label;

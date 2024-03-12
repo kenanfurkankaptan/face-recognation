@@ -16,10 +16,13 @@ class yunet : public IFaceDetection {
 	yunet() = delete;
 	yunet(std::string model_path);
 
-	std::vector<cv::Rect> get_faces(cv::Mat image);
+	std::vector<cv::RotatedRect> get_faces(cv::Mat image);
 
    private:
 	cv::Ptr<cv::FaceDetectorYN> detector;
+
+	void set_size(cv::Size img_size);
+	cv::Size current_size = cv::Size(1280, 720);
 };
 
 #endif /* YUNET_H_ */

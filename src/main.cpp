@@ -10,8 +10,8 @@
 #include <unordered_set>
 #include <vector>
 
+#include "LBPH_face_recognizer/LBPH_face_recognizer.h"
 #include "cascade_classifier/cascade_classifier.h"
-#include "face_recognation/face_recognation.h"
 #include "helpers/image_helper.h"
 #include "helpers/image_provider.h"
 #include "include/constants.h"
@@ -49,6 +49,42 @@ int main(int argc, char** argv) {
 
 	IFaceDetection* face_detector = nullptr;
 
+	face_detector = new yunet("models/face detection/face_detection_yunet_2022mar.onnx");
+	// face_detector = new cascade_classifier(Constants::Path::face_detection);
+
+	// auto image = image_provider(from_file);
+
+	// double brightness = 0;
+	// double gamma = 0;
+	// double saturation = 0;
+
+	// for (const auto& entry : fs::directory_iterator(fmt::format("{}/foreign", Constants::Path::data))) {
+	// 	if (fs::is_regular_file(entry.status())) {
+	// 		cv::Mat img = image.get_image(entry.path().generic_string());
+
+	// 		double t_brightness = 0;
+	// 		double t_gamma = 0;
+	// 		double t_saturation = 0;
+
+	// 		auto face_pos = face_detector->get_faces(img);
+	// 		auto faces = image_helper::crop_resize_faces(img, face_pos);
+
+	// 		for (auto i : faces) {
+	// 			image_helper::calculateBrightnessGammaSaturation(i, t_brightness, t_gamma, t_saturation);
+
+	// 			brightness += t_brightness;
+	// 			gamma += t_gamma;
+	// 			saturation += t_saturation;
+	// 		}
+	// 	}
+	// }
+
+	// brightness = brightness / 450;
+	// gamma = gamma / 450;
+	// saturation = saturation / 450;
+
+	// std::cout << fmt::format("brightness: {} -- gamma: {} -- saturation: {}", brightness, gamma, saturation) << std::endl;
+
 	if (app_mode == 0)
 		fs::remove(Constants::Path::face_recognation_info);
 
@@ -84,26 +120,28 @@ int main(int argc, char** argv) {
 		std::vector<cv::Mat> image_mat;
 		std::vector<int> image_labels;
 
-		face_detector = new cascade_classifier(Constants::Path::face_detection);
-
-		auto face_recog = face_recognizer();
+		auto face_recog = LBPH_face_recognizer();
 		if (!info.model.empty()) face_recog.load_model(fmt::format("{}/trainer.xml", Constants::Path::face_recognation));
-
-		// std::cout << "Created LBPHFaceRecognizer model" << std::endl;
 
 		/** vector.back gives segmentation fault if vector is empty */
 		int i = info.labels.size() == 0 ? 0 : info.labels.back().id + 1;
+
 		for (const std::string& value : labels) {
 			try {
 				for (const auto& entry : fs::directory_iterator(fmt::format("{}/{}", Constants::Path::data, value))) {
 					if (fs::is_regular_file(entry.status())) {
 						cv::Mat img = image.get_image(entry.path().generic_string());
 						auto face_pos = face_detector->get_faces(img);
-						auto faces = image_helper::crop_resize_faces(img, face_pos);
-						image_mat.insert(
-							image_mat.end(),
-							std::make_move_iterator(faces.begin()),
-							std::make_move_iterator(faces.end()));
+
+						for (auto face_rect : face_pos) {
+							auto face = image_helper::crop_resize_faces(img, face_rect);
+
+							if (face.empty()) continue;
+
+							auto current_bgs = image_helper::calculate_bgs(face);
+							auto adjusted_face = image_helper::preprocess_image(face, current_bgs, true);
+							image_mat.push_back(adjusted_face);
+						}
 					}
 				}
 
@@ -150,8 +188,6 @@ int main(int argc, char** argv) {
 			std::cerr << e.what() << '\n';
 		}
 
-		face_detector = new cascade_classifier(Constants::Path::face_detection);
-
 		std::cout << "Capturing Camera\n";
 		int counter = 0;
 		while (true) {
@@ -174,39 +210,41 @@ int main(int argc, char** argv) {
 
 	} else if (app_mode == 3) {
 		auto image = image_provider(from_camera);
-
-		auto face_recog = face_recognizer(fmt::format("{}/{}", Constants::Path::face_recognation, info.model));
-		// face_recog.load_model();
-
-		std::cout << "Capturing Camera\n";
-
-		face_detector = new yunet("models/face detection/face_detection_yunet_2022mar.onnx");
-		// face_detector = new cascade_classifier(Constants::Path::face_detection);
+		auto face_recog = LBPH_face_recognizer(fmt::format("{}/{}", Constants::Path::face_recognation, info.model));
 
 		std::cout << "Capturing Camera\n";
 		while (true) {
 			std::vector<face_predict_model> data;
+			cv::Mat adjusted_face;
+			cv::Mat adjusted_image;
+
 			cv::Mat img = image.get_image();
 			auto face_pos = face_detector->get_faces(img);
-
 			for (auto p : face_pos) {
 				auto face = image_helper::crop_resize_faces(img, p);
-				auto a = face_recog.predict(face);
-				std::cout << "label: " << a.label << "\tconfidence: " << a.confidence << std::endl;
+
+				if (face.empty()) continue;
+
+				auto current_bgs = image_helper::calculate_bgs(face);
+				adjusted_face = image_helper::preprocess_image(face, current_bgs, true);
+				adjusted_image = image_helper::preprocess_image(img, current_bgs);
+
+				auto prediction_result = face_recog.predict(adjusted_face);
+				std::cout << "label: " << prediction_result.label << "\tconfidence: " << prediction_result.confidence << std::endl;
 
 				std::string name = "error";
 
 				for (const auto label : info.labels) {
-					if (label.id == a.label) {
+					if (label.id == prediction_result.label) {
 						name = label.name;
 						break;
 					}
 				}
 
-				image_helper::label_faces(p, name, img);
+				image_helper::label_faces(p, name, adjusted_image);
 			}
 
-			imshow("Image", img);
+			imshow("Image", adjusted_image.empty() ? img : adjusted_image);
 			cv::waitKey(1);
 		}
 	}

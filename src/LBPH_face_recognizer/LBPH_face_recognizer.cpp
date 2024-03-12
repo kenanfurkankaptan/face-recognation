@@ -1,13 +1,12 @@
-#include "face_recognation.h"
+#include "LBPH_face_recognizer.h"
 
 #include <filesystem>
 
 namespace fs = std::filesystem;
 
-face_recognizer::face_recognizer(std::string path) {
+LBPH_face_recognizer::LBPH_face_recognizer(std::string path) {
 	std::cout << "Creating LBPHFaceRecognizer model" << std::endl;
 	recognizer = cv::face::LBPHFaceRecognizer::create(2);
-	// recognizer = cv::face::LBPHFaceRecognizer::create(2, 12, 12, 12, (double)(2E308L));
 
 	if (!path.empty() && fs::exists(path)) {
 		std::cout << "Loading trained LBPHFaceRecognizer model" << std::endl;
@@ -19,16 +18,15 @@ face_recognizer::face_recognizer(std::string path) {
 	}
 }
 
-int face_recognizer::train(std::vector<cv::Mat> images, int label) {
+int LBPH_face_recognizer::train(std::vector<cv::Mat> images, int label) {
 	std::vector<int> label_vector(images.size(), label);
 
 	return this->train(images, label_vector);
 }
 
-int face_recognizer::train(std::vector<cv::Mat> images, std::vector<int> label) {
+int LBPH_face_recognizer::train(std::vector<cv::Mat> images, std::vector<int> label) {
 	if (images.empty() || label.empty() || images.size() != label.size()) {
 		std::cerr << "Error: size: " << images.size() << std::endl;
-
 		std::cerr << "Error: Empty or mismatched dataset." << std::endl;
 		return -1;
 	}
@@ -44,18 +42,17 @@ int face_recognizer::train(std::vector<cv::Mat> images, std::vector<int> label) 
 	return 0;
 }
 
-int face_recognizer::update(std::vector<cv::Mat> images, int label) {
+int LBPH_face_recognizer::update(std::vector<cv::Mat> images, int label) {
 	std::vector<int> label_vector(images.size(), label);
 
 	return this->update(images, label_vector);
 }
 
-int face_recognizer::update(std::vector<cv::Mat> images, std::vector<int> label) {
+int LBPH_face_recognizer::update(std::vector<cv::Mat> images, std::vector<int> label) {
 	std::cout << "Updating LBPHFaceRecognizer model" << std::endl;
 
 	if (images.empty() || label.empty() || images.size() != label.size()) {
 		std::cerr << "Error: size: " << images.size() << std::endl;
-
 		std::cerr << "Error: Empty or mismatched dataset." << std::endl;
 		return -1;
 	}
@@ -71,15 +68,15 @@ int face_recognizer::update(std::vector<cv::Mat> images, std::vector<int> label)
 	return 0;
 }
 
-face_predict_model face_recognizer::predict(cv::Mat faceROI) {
+face_predict_model LBPH_face_recognizer::predict(cv::Mat face_ROI) {
 	int label = -1;
 	double confidence = -1;
-	recognizer->predict(faceROI, label, confidence);
+	recognizer->predict(face_ROI, label, confidence);
 
 	return {label, confidence};
 }
 
-int face_recognizer::save_model(std::string path) {
+int LBPH_face_recognizer::save_model(std::string path) {
 	std::cout << "Saving LBPHFaceRecognizer model" << std::endl;
 
 	try {
@@ -93,7 +90,7 @@ int face_recognizer::save_model(std::string path) {
 	return 0;
 }
 
-int face_recognizer::load_model(std::string path) {
+int LBPH_face_recognizer::load_model(std::string path) {
 	std::cout << "Loading trained LBPHFaceRecognizer model" << std::endl;
 
 	try {

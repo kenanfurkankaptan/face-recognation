@@ -14,7 +14,7 @@ class cascade_classifier : public IFaceDetection {
 	cascade_classifier() = delete;
 	cascade_classifier(std::string model_path);
 
-	std::vector<cv::Rect> get_faces(cv::Mat image);
+	std::vector<cv::RotatedRect> get_faces(cv::Mat image);
 
    private:
 	cv::CascadeClassifier detector;

@@ -12,7 +12,7 @@ class IFaceDetection {
 	IFaceDetection(){};
 	IFaceDetection(std::string model_path){};
 
-	virtual std::vector<cv::Rect> get_faces(cv::Mat image) = 0;
+	virtual std::vector<cv::RotatedRect> get_faces(cv::Mat image) = 0;
 };
 
 #endif /* FACE_DETECTION_H_ */

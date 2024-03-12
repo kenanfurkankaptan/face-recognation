@@ -19,7 +19,7 @@ cascade_classifier::cascade_classifier(std::string model_path) {
 	}
 };
 
-std::vector<cv::Rect> cascade_classifier::get_faces(cv::Mat img) {
+std::vector<cv::RotatedRect> cascade_classifier::get_faces(cv::Mat img) {
 	if (detector.empty()) {
 		std::cerr << "cascade_classifier::load_model: cascade model does not exist\n";
 		return {};
@@ -32,5 +32,16 @@ std::vector<cv::Rect> cascade_classifier::get_faces(cv::Mat img) {
 	std::vector<cv::Rect> faces;
 	detector.detectMultiScale(img_grey, faces, 1.1, 10);
 
-	return faces;
+	std::vector<cv::RotatedRect> rotated_faces;
+	for (auto original_rect : faces) {
+		cv::RotatedRect rotated_rect = cv::RotatedRect(
+			cv::Point2f(original_rect.x + original_rect.width / 2.0, original_rect.y + original_rect.height / 2.0),
+			cv::Size2f(original_rect.width, original_rect.height),
+			0.0	 // Default rotation angle: 0 degrees
+		);
+
+		rotated_faces.push_back(rotated_rect);
+	}
+
+	return rotated_faces;
 }
