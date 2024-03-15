@@ -32,5 +32,6 @@
 *.app
 
 resources/*
-models/*
+models/face recognize/*
 data/*
+!data/foreign

@@ -5,7 +5,7 @@ CXX = g++
 
 # -g	- this flag adds debugging information to the executable file
 # -O	- the compiler tries to reduce code size and execution time, it may create distruptions in debuggig, remove it in debugging
-CPPFLAGS = -g -O1 -std=c++20
+CPPFLAGS = -g -O2 -std=c++20
 
 # -Wall  					- this flag is used to turn on most compiler warnings
 # -Wextra  					- this flag enables some extra warning flags that are not enabled by -Wall.
@@ -53,7 +53,6 @@ RM = rm -rf
 
 # linker flags
 # libraries to link
-# LDFLAGS += -I /usr/include/opencv4/ -L /usr/lib/x86_64-linux-gnu/ -lopencv_core -lopencv_highgui -lopencv_imgcodecs -lopencv_videoio
 LDFLAGS += `pkg-config opencv4 --cflags --libs` -lfmt
 
 # Src files list

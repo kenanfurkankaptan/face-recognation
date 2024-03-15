@@ -18,6 +18,9 @@
 #include "schemes/face_recognation_model_info.h"
 #include "yunet/yunet.h"
 
+
+/** TODO: Fix memory leaks */
+
 using json = nlohmann::json;
 
 namespace fs = std::filesystem;
@@ -52,42 +55,11 @@ int main(int argc, char** argv) {
 	face_detector = new yunet("models/face detection/face_detection_yunet_2022mar.onnx");
 	// face_detector = new cascade_classifier(Constants::Path::face_detection);
 
-	// auto image = image_provider(from_file);
-
-	// double brightness = 0;
-	// double gamma = 0;
-	// double saturation = 0;
-
-	// for (const auto& entry : fs::directory_iterator(fmt::format("{}/foreign", Constants::Path::data))) {
-	// 	if (fs::is_regular_file(entry.status())) {
-	// 		cv::Mat img = image.get_image(entry.path().generic_string());
-
-	// 		double t_brightness = 0;
-	// 		double t_gamma = 0;
-	// 		double t_saturation = 0;
-
-	// 		auto face_pos = face_detector->get_faces(img);
-	// 		auto faces = image_helper::crop_resize_faces(img, face_pos);
-
-	// 		for (auto i : faces) {
-	// 			image_helper::calculateBrightnessGammaSaturation(i, t_brightness, t_gamma, t_saturation);
-
-	// 			brightness += t_brightness;
-	// 			gamma += t_gamma;
-	// 			saturation += t_saturation;
-	// 		}
-	// 	}
-	// }
-
-	// brightness = brightness / 450;
-	// gamma = gamma / 450;
-	// saturation = saturation / 450;
-
-	// std::cout << fmt::format("brightness: {} -- gamma: {} -- saturation: {}", brightness, gamma, saturation) << std::endl;
-
 	if (app_mode == 0)
 		fs::remove(Constants::Path::face_recognation_info);
 
+
+	/** load face recognation model info */
 	schemes::json_models::face_recognize::model_info info;
 	if (fs::exists(Constants::Path::face_recognation_info)) {
 		std::cout << "updating model" << std::endl;
@@ -97,6 +69,7 @@ int main(int argc, char** argv) {
 		std::cout << "creating model" << std::endl;
 	}
 
+	/** train or update face recognation model */
 	if (app_mode == 0 || app_mode == 2) {
 		auto image = image_provider(from_file);
 
