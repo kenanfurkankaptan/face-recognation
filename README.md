@@ -1,5 +1,6 @@
-# face-detection
+# face-recognation
 
+face recognation app using YuNet and LBPH Face Recognizer. Example usage:
 train from data/label_name/*
 
     ./face_detector.out -train
