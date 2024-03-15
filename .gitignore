@@ -31,7 +31,10 @@
 *.out
 *.app
 
+.vscode
+
 resources/*
-models/face recognize/*
+models/face recognation/*
+!models/face recognation/note
 data/*
 !data/foreign
